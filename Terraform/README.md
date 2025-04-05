@@ -64,6 +64,6 @@ AWS Region: us-east-1
 ![dynmodb](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Terraform/screenshots/dynmodb.png)
 ![ec2](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Terraform/screenshots/ec2.png)
 ![vpc](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Terraform/screenshots/IGW.png)
-![structure](/screenshots/infrastructure.png)
+![structure](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Terraform/screenshots/infrastructure.png)
 
 
