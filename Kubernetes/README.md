@@ -98,4 +98,46 @@ kubectl apply -f ingress.yaml
 kubectl get all -n ivolve
 kubectl get ingress -n ivolve
 ```
-          
+### How to install nginx controller
+**1.install HELM**
+```bash
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+sudo apt-get install apt-transport-https --yes
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+helm version
+```
+**2.Install nginx-controller**
+```bash
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+helm install ingress-nginx ingress-nginx/ingress-nginx
+```
+### How to init Master node
+```bash
+ sudo kubeadm init --pod-network-cidr=10.244.0.0/16  #you shoud get token to apply it to worker 
+ mkdir -p $HOME/.kube 
+ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config 
+ sudo chown $(id -u):$(id -g) $HOME/.kube/config 
+ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+ ``` 
+ **in this image you will see the token and how to run it**
+
+ ![Master](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Kubernetes/Screenshots/init-k8S.png)
+
+ ### Images
+
+ ![Ndes](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Kubernetes/Screenshots/nodes.png)
+
+
+![ingress1](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Kubernetes/Screenshots/ing1.png)
+
+![ingress2](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Kubernetes/Screenshots/ing2.png)
+
+![ingress3](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Kubernetes/Screenshots/ing3.png)
+
+![Loadbalncer](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Kubernetes/Screenshots/Loadbalancer.png)
+
+
