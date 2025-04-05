@@ -116,12 +116,15 @@ keyed_groups =
 **Running Docker**
 ![docker](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Ansible/screenshots/docker-role.png)
 ![docker](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Ansible/screenshots/test-docker.png)
+
 **Runnig Java**
 ![java](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Ansible/screenshots/install-java.png)
 ![java](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Ansible/screenshots/test-java.png)
+
 **Runing Jenkins**
 ![jenkins](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Ansible/screenshots/intstall-jenkins.png)
 ![jenkins](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Ansible/screenshots/test-jenkins.png)
+
 **Running SonarQube**
 ![sonarqube](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Ansible/screenshots/intsall-sonar.png)
 ![sonarqube](https://github.com/ibrahim-reda-2001/Final_Project_iVolve/blob/master/Ansible/screenshots/test-sonar.png)
