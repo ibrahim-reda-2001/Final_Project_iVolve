@@ -1,0 +1,7 @@
+---
+- name: Update APT cache
+  hosts: _jenkins
+  become: true
+
+  roles:
+    - sonar

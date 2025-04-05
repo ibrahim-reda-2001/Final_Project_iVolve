@@ -1,0 +1,234 @@
+---
+
+    - name: Configure system parameters
+      block:
+        - name: Backup sysctl.conf
+          copy:
+            src: /etc/sysctl.conf
+            dest: /root/sysctl.conf_backup
+            remote_src: yes
+
+        - name: Update sysctl.conf
+          copy:
+            content: |
+              vm.max_map_count=262144
+              fs.file-max=65536
+            dest: /etc/sysctl.conf
+
+        - name: Backup limits.conf
+          copy:
+            src: /etc/security/limits.conf
+            dest: /root/sec_limit.conf_backup
+            remote_src: yes
+
+        - name: Update limits.conf
+          copy:
+            content: |
+              sonarqube   -   nofile   65536
+              sonarqube   -   nproc    409
+            dest: /etc/security/limits.conf
+
+    - name: Install Java 17
+      apt:
+        name: openjdk-17-jdk
+        state: present
+        update_cache: yes
+
+    - name: Configure PostgreSQL
+      block:
+        - name: Add PostgreSQL repo key
+          apt_key:
+            url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+
+        - name: Add PostgreSQL repository
+          apt_repository:
+            repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+            filename: pgdg.list
+
+        - name: Install PostgreSQL
+          apt:
+            name: 
+              - postgresql
+              - postgresql-contrib
+            state: present
+            update_cache: yes
+
+        - name: Set postgres password
+          command: echo "postgres:admin123" | chpasswd
+
+        - name: Configure PostgreSQL database
+          block:
+            - name: Create sonar user
+              command: sudo -u postgres createuser sonar
+              register: createuser_result
+              failed_when: 
+                - createuser_result.rc != 0
+                - "'already exists' not in createuser_result.stderr"
+
+            - name: Set sonar password
+              command: sudo -u postgres psql -c "ALTER USER sonar WITH ENCRYPTED PASSWORD 'admin123';"
+
+            - name: Create sonarqube database
+              command: sudo -u postgres psql -c "CREATE DATABASE sonarqube OWNER sonar;"
+              register: createdb_result
+              failed_when: 
+                - createdb_result.rc != 0
+                - "'already exists' not in createdb_result.stderr"
+
+            - name: Grant privileges
+              command: sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE sonarqube to sonar;"
+
+        - name: Restart PostgreSQL
+          service:
+            name: postgresql
+            state: restarted
+
+    - name: Install SonarQube
+      block:
+        - name: Create SonarQube directory
+          file:
+            path: /sonarqube/
+            state: directory
+
+        - name: Download SonarQube
+          get_url:
+            url: https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-9.9.8.100196.zip
+            dest: /sonarqube/sonarqube.zip
+
+        - name: Install unzip
+          apt:
+            name: zip
+            state: present
+
+        - name: Extract SonarQube
+          unarchive:
+            src: /sonarqube/sonarqube.zip
+            dest: /opt/
+            remote_src: yes
+            extra_opts: "-o"
+
+        - name: Rename SonarQube directory
+          command: mv /opt/sonarqube-9.9.8.100196 /opt/sonarqube
+          args:
+            creates: /opt/sonarqube
+
+        - name: Create sonar group
+          group:
+            name: sonar
+            state: present
+
+        - name: Create sonar user
+          user:
+            name: sonar
+            group: sonar
+            home: /opt/sonarqube
+            comment: "SonarQube - User"
+
+        - name: Set SonarQube ownership
+          file:
+            path: /opt/sonarqube
+            owner: sonar
+            group: sonar
+            recurse: yes
+
+        - name: Configure sonar.properties
+          copy:
+            content: |
+              sonar.jdbc.username=sonar
+              sonar.jdbc.password=admin123
+              sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
+              sonar.web.host=0.0.0.0
+              sonar.web.port=9000
+              sonar.web.javaAdditionalOpts=-server
+              sonar.search.javaOpts=-Xmx512m -Xms512m -XX:+HeapDumpOnOutOfMemoryError
+              sonar.log.level=INFO
+              sonar.path.logs=logs
+            dest: /opt/sonarqube/conf/sonar.properties
+
+        - name: Create systemd service
+          copy:
+            content: |
+              [Unit]
+              Description=SonarQube service
+              After=syslog.target network.target
+
+              [Service]
+              Type=forking
+              ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
+              ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
+              User=sonar
+              Group=sonar
+              Restart=always
+              LimitNOFILE=65536
+              LimitNPROC=4096
+
+              [Install]
+              WantedBy=multi-user.target
+            dest: /etc/systemd/system/sonarqube.service
+
+        - name: Reload systemd and enable service
+          systemd:
+            daemon_reload: yes
+            enabled: yes
+            name: sonarqube
+
+    - name: Configure Nginx
+      block:
+        - name: Install Nginx
+          apt:
+            name: nginx
+            state: present
+
+        - name: Remove default sites
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /etc/nginx/sites-enabled/default
+            - /etc/nginx/sites-available/default
+
+        - name: Create Nginx config
+          copy:
+            content: |
+              server{
+                  listen      80;
+                  server_name sonarqube.groophy.in;
+
+                  access_log  /var/log/nginx/sonar.access.log;
+                  error_log   /var/log/nginx/sonar.error.log;
+
+                  proxy_buffers 16 64k;
+                  proxy_buffer_size 128k;
+
+                  location / {
+                      proxy_pass  http://127.0.0.1:9000;
+                      proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+                      proxy_redirect off;
+                                            
+                      proxy_set_header    Host            $host;
+                      proxy_set_header    X-Real-IP       $remote_addr;
+                      proxy_set_header    X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header    X-Forwarded-Proto http;
+                  }
+              }
+            dest: /etc/nginx/sites-available/sonarqube
+
+        - name: Enable Nginx site
+          file:
+            src: /etc/nginx/sites-available/sonarqube
+            dest: /etc/nginx/sites-enabled/sonarqube
+            state: link
+
+        - name: Allow ports
+          ufw:
+            rule: allow
+            port: "{{ item }}"
+            proto: tcp
+          loop:
+            - 80
+            - 9000
+            - 9001
+
+    - name: Reboot system
+      reboot:
+        reboot_timeout: 300

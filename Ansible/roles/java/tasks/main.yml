@@ -1,0 +1,21 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install Java 17
+  apt:
+    name: openjdk-17-jdk
+    state: present
+
+- name: Set Java 17 as default
+  alternatives:
+    name: java
+    path: /usr/lib/jvm/java-17-openjdk-amd64/bin/java
+    priority: 1000
+
+- name: Verify Java installation
+  command: java -version
+  register: java_check
+  changed_when: false
+  failed_when: "'17' not in java_check.stderr"
