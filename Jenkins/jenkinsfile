@@ -1,7 +1,7 @@
 @Library('my-shared-library@master') _
 
 pipeline {
-    agent any
+    agent { label 'slave1' }
 
     tools {
         gradle 'ibra-gradle' // Ensure this tool name exists in Jenkins
