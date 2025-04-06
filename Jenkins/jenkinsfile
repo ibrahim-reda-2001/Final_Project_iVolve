@@ -6,7 +6,7 @@ pipeline {
     environment {
         // ======== Externalized Configurations ========
         // Repository Configurations
-        NEXUS_URL = 'http://18.234.225.53:8081'
+        NEXUS_URL = '18.234.225.53:8081'
         REPO_NAME = 'ivolve-jar'
         GROUP_ID = 'ivolve'
         ARTIFACT_ID = 'ivolve-app'
