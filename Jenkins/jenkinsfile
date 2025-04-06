@@ -8,7 +8,7 @@ pipeline {
     }
 
     stages {
-        // Explicitly check out code (optional but recommended)
+        Explicitly check out code (optional but recommended)
         stage('Checkout SCM') {
             steps {
                 checkout scm
@@ -62,8 +62,15 @@ pipeline {
 
         stage('test shared-lib and docker build') {
             steps {
-                dir('Jenkins'){
+                dir('Docker'){
                     dockerbuild('docker-password', 'ibrahimelmsery1', 'ivolve-app')
+                }
+            }
+        }
+        stage('update maifistfile') {
+            steps {
+                dir('Kubernetes'){
+                   k8sdeploy('k8s-token','https://172.31.85.77:6443','ivolve-app','ivolve')
                 }
             }
         }
