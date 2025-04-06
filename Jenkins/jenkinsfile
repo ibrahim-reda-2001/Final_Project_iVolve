@@ -74,5 +74,26 @@ pipeline {
                 }
             }
         }
+        stage('nexus-publish'){
+            steps{
+                dir('Jenkins') {
+        nexusArtifactUploader(
+        nexusVersion: 'nexus3',
+        protocol: 'http',
+        nexusUrl: '18.234.225.53:8081/',
+        groupId: 'ivolve',
+        version: "${env.BUILD_ID}-${env.BUILD_TIMESTAMP}",  
+        repository: 'ivolve-jar',
+        credentialsId: 'nexus-password',
+        artifacts: [
+            [artifactId: 'ivolve-app',
+             classifier: '',
+             file: 'build/libs/demo-0.0.1-SNAPSHOT.jar',
+             type: 'jar']
+        ]
+              )
+            }
+        }
+        }
     }
 }
