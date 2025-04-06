@@ -1,3 +1,5 @@
+@Library('my-shared-library@master') _
+
 pipeline {
     agent any
 
@@ -6,7 +8,7 @@ pipeline {
     }
 
     stages {
-        // Explicitly check out code (optional but recommended)
+        Explicitly check out code (optional but recommended)
         stage('Checkout SCM') {
             steps {
                 checkout scm
@@ -54,6 +56,14 @@ pipeline {
                             -Dsonar.junit.reportPaths=build/test-results/test/
                         """
                     }
+                }
+            }
+        }
+
+        stage('test shared-lib and docker build') {
+            steps {
+                dir('Jenkins'){
+                dockerbuild('docker-password', 'ibrahimelmsery1', 'ivolve-app')
                 }
             }
         }
