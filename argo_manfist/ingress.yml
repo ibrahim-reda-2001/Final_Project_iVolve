@@ -1,0 +1,20 @@
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    name: ivolve_ingress
+    namespace: ivolve
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /
+  spec:
+    ingressClassName: nginx
+    rules:
+    - host: ingress-173674326.us-east-1.elb.amazonaws.com
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: ivolve-app-svc
+              port:
+                number: 80
