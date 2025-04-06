@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-repo-secret
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  url: https://github.com/ibrahim-reda-2001/Final_Project_iVolve.git
+  username: ibrahim-reda-2001
+  password: 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
+  type: git
