@@ -3,23 +3,50 @@
 pipeline {
     agent { label 'slave1' }
 
+    environment {
+        // ======== Externalized Configurations ========
+        // Repository Configurations
+        NEXUS_URL = 'http://18.234.225.53:8081'
+        REPO_NAME = 'ivolve-jar'
+        GROUP_ID = 'ivolve'
+        ARTIFACT_ID = 'ivolve-app'
+        JAR_FILE = 'build/libs/demo-0.0.1-SNAPSHOT.jar'
+        
+        // Credential IDs (from Jenkins Credential Store)
+        NEXUS_CREDS = 'nexus-password'
+        DOCKER_CREDS = 'docker-password'
+        K8S_CREDS = 'k8s-token'
+        
+        // Versioning
+        BUILD_VERSION = "${env.BUILD_ID}-${env.BUILD_TIMESTAMP}"
+        
+        // Docker/K8s Config
+        DOCKER_USER = 'ibrahimelmsery1'
+        DOCKER_IMAGE = 'ivolve-app'
+        K8S_CLUSTER = 'https://172.31.85.77:6443'
+        K8S_NAMESPACE = 'ivolve'
+        
+        // SonarQube Config
+        SONAR_PROJECT_KEY = 'demo-app'
+        SONAR_PROJECT_NAME = 'demo-springboot-app'
+    }
+
     tools {
-        gradle 'ibra-gradle' // Ensure this tool name exists in Jenkins
+        gradle 'ibra-gradle'
     }
 
     stages {
-        // Explicitly check out code (optional but recommended)
+        // Existing stages remain unchanged below
+        // Only variable references are modified in the stages
+        // -----------------------------------------------
+        
         stage('Checkout SCM') {
-            steps {
-                checkout scm
-            }
+            steps { checkout scm }
         }
 
         stage('Build') {
             steps {
-                dir('Jenkins') { 
-                    sh 'gradle build'
-                }
+                dir('Jenkins') { sh 'gradle build' }
             }
             post {
                 success { echo 'Build Success' }
@@ -29,9 +56,7 @@ pipeline {
 
         stage('Test') {
             steps {
-                dir('Jenkins') { 
-                    sh 'gradle test' 
-                }
+                dir('Jenkins') { sh 'gradle test' }
             }
             post {
                 success { echo 'Test Success' }
@@ -41,15 +66,15 @@ pipeline {
 
         stage('SonarQube Analysis') {
             environment {
-                SCANNER_HOME = tool 'sonar-tool' // Verify tool name in Jenkins
+                SCANNER_HOME = tool 'sonar-tool'
             }
             steps {
                 withSonarQubeEnv('sonar-server') {
                     dir('Jenkins') { 
                         sh """
                             ${SCANNER_HOME}/bin/sonar-scanner \
-                            -Dsonar.projectKey=demo-app \
-                            -Dsonar.projectName=demo-springboot-app \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                            -Dsonar.projectName=${SONAR_PROJECT_NAME} \
                             -Dsonar.java.binaries=build/classes/java/main/,build/classes/java/test/ \
                             -Dsonar.sources=src/main/java/ \
                             -Dsonar.tests=src/test/java/ \
@@ -63,37 +88,59 @@ pipeline {
         stage('test shared-lib and docker build') {
             steps {
                 dir('Docker'){
-                    dockerbuild('docker-password', 'ibrahimelmsery1', 'ivolve-app')
+                    dockerbuild("${DOCKER_CREDS}", "${DOCKER_USER}", "${DOCKER_IMAGE}")
                 }
             }
         }
+
         stage('update maifistfile') {
             steps {
                 dir('Kubernetes'){
-                   k8sdeploy('k8s-token','https://172.31.85.77:6443','ivolve-app','ivolve')
+                   k8sdeploy("${K8S_CREDS}", "${K8S_CLUSTER}", "${DOCKER_IMAGE}", "${K8S_NAMESPACE}")
                 }
             }
         }
+
         stage('nexus-publish'){
             steps{
                 dir('Jenkins') {
-        nexusArtifactUploader(
-        nexusVersion: 'nexus3',
-        protocol: 'http',
-        nexusUrl: '18.234.225.53:8081/',
-        groupId: 'ivolve',
-        version: "${env.BUILD_ID}-${env.BUILD_TIMESTAMP}",  
-        repository: 'ivolve-jar',
-        credentialsId: 'nexus-password',
-        artifacts: [
-            [artifactId: 'ivolve-app',
-             classifier: '',
-             file: 'build/libs/demo-0.0.1-SNAPSHOT.jar',
-             type: 'jar']
-        ]
-              )
+                    nexusArtifactUploader(
+                        nexusVersion: 'nexus3',
+                        protocol: 'http',
+                        nexusUrl: "${NEXUS_URL}",
+                        groupId: "${GROUP_ID}",
+                        version: "${BUILD_VERSION}",  
+                        repository: "${REPO_NAME}",
+                        credentialsId: "${NEXUS_CREDS}",
+                        artifacts: [
+                            [artifactId: "${ARTIFACT_ID}",
+                             classifier: '',
+                             file: "${JAR_FILE}",
+                             type: 'jar']
+                        ]
+                    )
+                }
             }
         }
+    }
+
+    post {
+        success {
+            slackSend(
+                channel: "#ivolve-app",
+                color: "#00FF00",
+                message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
+            )
+        }
+        failure {
+            slackSend(
+                channel: "#ivolve-app",
+                color: "#FF0000",
+                message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})"
+            )
+        }
+        cleanup {
+            cleanWs()
         }
     }
 }
