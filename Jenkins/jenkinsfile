@@ -2,65 +2,60 @@ pipeline {
     agent any
 
     tools {
-        gradle 'ibra-gradle'
+        gradle 'ibra-gradle' // Ensure this tool name exists in Jenkins
     }
 
     stages {
-         
+        // Explicitly check out code (optional but recommended)
+        stage('Checkout SCM') {
+            steps {
+                checkout scm
+            }
+        }
 
         stage('Build') {
             steps {
-                sh '''
-                    cd Jenkins
-                    gradle build
-                '''
+                dir('Jenkins') { // All steps here run inside the 'Jenkins/' subdirectory
+                    sh 'gradle build'
+                }
             }
             post {
-                success {
-                    echo 'Build Success'
-                }
-                failure {
-                    echo 'Build Failed'
-                }
+                success { echo 'Build Success' }
+                failure { echo 'Build Failed' }
             }
         }
 
         stage('Test') {
             steps {
-                sh ''' 
-                cd Jenkins 
-                    gradle test
-                '''
+                dir('Jenkins') { 
+                    sh 'gradle test' 
+                }
             }
             post {
-                success {
-                    echo 'Test Success'
-                }
-                failure {
-                    echo 'Test Failed'
-                }
+                success { echo 'Test Success' }
+                failure { echo 'Test Failed' }
             }
         }
 
         stage('SonarQube Analysis') {
             environment {
-                SCANNER_HOME = tool 'sonar-tool' // Make sure this matches the tool name in Jenkins
+                SCANNER_HOME = tool 'sonar-tool' // Verify tool name in Jenkins
             }
             steps {
                 withSonarQubeEnv('sonar-server') {
-                    sh """
-                       cd Jenkins &&
-                        ${SCANNER_HOME}/bin/sonar-scanner \
-                        -Dsonar.projectKey=demo-app \
-                        -Dsonar.projectName=demo-springboot-app \
-                        -Dsonar.java.binaries=build/classes/java/main/,build/classes/java/test/ \
-                        -Dsonar.sources=src/main/java/ \
-                        -Dsonar.tests=src/test/java/ \
-                        -Dsonar.junit.reportPaths=build/test-results/test/
-                    """
+                    dir('Jenkins') { // Sonar analysis runs inside 'Jenkins/'
+                        sh """
+                            ${SCANNER_HOME}/bin/sonar-scanner \
+                            -Dsonar.projectKey=demo-app \
+                            -Dsonar.projectName=demo-springboot-app \
+                            -Dsonar.java.binaries=build/classes/java/main/,build/classes/java/test/ \
+                            -Dsonar.sources=src/main/java/ \
+                            -Dsonar.tests=src/test/java/ \
+                            -Dsonar.junit.reportPaths=build/test-results/test/
+                        """
+                    }
                 }
             }
         }
-        
     }
 }
