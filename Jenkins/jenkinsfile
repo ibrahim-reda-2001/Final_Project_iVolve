@@ -95,7 +95,7 @@ pipeline {
 
         stage('update maifistfile') {
             steps {
-                dir('Kubernetes'){
+                dir('argo_manfist'){
                    k8sdeploy("${K8S_CREDS}", "${K8S_CLUSTER}", "${DOCKER_IMAGE}", "${K8S_NAMESPACE}")
                 }
             }
