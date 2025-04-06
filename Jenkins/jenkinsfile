@@ -8,7 +8,7 @@ pipeline {
     }
 
     stages {
-        Explicitly check out code (optional but recommended)
+        // Explicitly check out code (optional but recommended)
         stage('Checkout SCM') {
             steps {
                 checkout scm
@@ -17,7 +17,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                dir('Jenkins') { // All steps here run inside the 'Jenkins/' subdirectory
+                dir('Jenkins') { 
                     sh 'gradle build'
                 }
             }
@@ -45,7 +45,7 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sonar-server') {
-                    dir('Jenkins') { // Sonar analysis runs inside 'Jenkins/'
+                    dir('Jenkins') { 
                         sh """
                             ${SCANNER_HOME}/bin/sonar-scanner \
                             -Dsonar.projectKey=demo-app \
@@ -63,7 +63,7 @@ pipeline {
         stage('test shared-lib and docker build') {
             steps {
                 dir('Jenkins'){
-                dockerbuild('docker-password', 'ibrahimelmsery1', 'ivolve-app')
+                    dockerbuild('docker-password', 'ibrahimelmsery1', 'ivolve-app')
                 }
             }
         }
