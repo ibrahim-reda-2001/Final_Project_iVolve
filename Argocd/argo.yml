@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx 
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/ibrahim-reda-2001/Final_Project_iVolve.git
+    path: argo_manfist
+    targetRevision: master
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ivolve
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
