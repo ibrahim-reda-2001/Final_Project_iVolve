@@ -11,7 +11,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                    cd jenkins
+                    cd Jenkins
                     gradle build
                 '''
             }
@@ -28,7 +28,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh ''' 
-                cd jenkins 
+                cd Jenkins 
                     gradle test
                 '''
             }
@@ -49,7 +49,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('sonar-server') {
                     sh """
-                       cd jenkins &&
+                       cd Jenkins &&
                         ${SCANNER_HOME}/bin/sonar-scanner \
                         -Dsonar.projectKey=demo-app \
                         -Dsonar.projectName=demo-springboot-app \
