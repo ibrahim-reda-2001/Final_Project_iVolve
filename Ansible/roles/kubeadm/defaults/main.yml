@@ -1,0 +1,10 @@
+---
+# Kubernetes initialization parameters
+kubeadm_init_apiserver_advertise_address: "172.31.64.247"
+kubeadm_init_control_plane_endpoint: "44.211.146.239"
+kubeadm_init_pod_network_cidr: "192.168.0.0/16"
+kubeadm_init_upload_certs: true
+
+# User-specific configuration
+kube_config_user: "{{ ansible_user }}"
+kube_user_home: "{{ ansible_user_dir }}"

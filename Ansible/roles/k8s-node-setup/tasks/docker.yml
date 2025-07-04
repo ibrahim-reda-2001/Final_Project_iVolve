@@ -1,0 +1,84 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install prerequisites
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gpg
+    state: present
+
+- name: Create Docker keyring directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Docker GPG key
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+
+- name: Add Docker repository
+  become: yes
+  ansible.builtin.apt_repository:
+    repo: >
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu jammy stable
+    filename: docker
+    state: present
+
+- name: Update apt cache after adding Docker repo
+  become: yes
+  ansible.builtin.apt:
+    update_cache: yes
+
+
+- name: Install Docker components
+  become: yes
+  apt:
+    name:
+      - containerd.io
+      - docker-ce
+      - docker-ce-cli
+    state: present
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start Docker services
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - docker
+    - containerd
+
+- name: Add user to docker group
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes
+
+- name: Download CNI plugins
+  get_url:
+    url: https://github.com/containernetworking/plugins/releases/download/v1.4.0/cni-plugins-linux-amd64-v1.4.0.tgz
+    dest: /tmp/cni-plugins.tgz
+
+- name: Create CNI bin directory
+  file:
+    path: /opt/cni/bin
+    state: directory
+
+- name: Extract CNI plugins
+  unarchive:
+    src: /tmp/cni-plugins.tgz
+    dest: /opt/cni/bin
+    remote_src: yes

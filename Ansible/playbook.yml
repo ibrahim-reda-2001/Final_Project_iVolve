@@ -1,7 +1,44 @@
----
-- name: Update APT cache
-  hosts: _jenkins
+- name: this is for master kubernetes
+  hosts: master
+  gather_facts: true
   become: true
 
   roles:
-    - sonar
+    - k8s-node-setup
+    - kubeadm
+    - cni
+
+- name: this is for workers kubernetes
+  hosts: workers
+  gather_facts: true
+  become: true
+
+  roles:
+    - k8s-node-setup
+    - join
+
+- name: this is for jenkins
+  hosts: jenkins
+  gather_facts: true
+  become: true
+
+  roles:
+    - jenkins
+    - docker
+
+- name: this is for jenkins slave
+  hosts: jenkins-slave
+  gather_facts: true
+  become: true
+
+  roles:
+    - java
+    - docker
+
+- name: this is for sonarqube
+  hosts: sonarqube
+  gather_facts: true
+  become: true
+
+  roles:
+    - roles/sonar

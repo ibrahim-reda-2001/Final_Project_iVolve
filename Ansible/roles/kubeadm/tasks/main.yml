@@ -1,0 +1,40 @@
+---
+- name: Check if Kubernetes is already initialized
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kube_admin_conf
+
+- name: Check if Kubernetes is already initialized
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kube_admin_conf
+
+- name: Initialize control plane with kubeadm (if not initialized)
+  become: yes
+  shell: >
+    timeout 1200  sudo kubeadm init
+    --apiserver-advertise-address={{ kubeadm_init_apiserver_advertise_address }}
+    --control-plane-endpoint={{ kubeadm_init_control_plane_endpoint }}
+    --pod-network-cidr={{ kubeadm_init_pod_network_cidr }}
+    {% if kubeadm_init_upload_certs %}--upload-certs{% endif %}
+  when: not kube_admin_conf.stat.exists
+  register: kubeadm_init_result
+
+- name: Ensure .kube directory exists for ubuntu user
+  file:
+    path: /home/ubuntu/.kube
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0750'
+  become: yes
+
+- name: Copy admin.conf to ubuntu user's kubeconfig
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/ubuntu/.kube/config
+    owner: ubuntu
+    group: ubuntu
+    mode: '0600'
+    remote_src: yes
+  become: yes

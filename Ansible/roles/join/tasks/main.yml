@@ -1,0 +1,6 @@
+---
+- include_tasks: master.yml
+  when: kube_join_role == 'master'
+
+- include_tasks: worker.yml
+  when: kube_join_role == 'worker'

@@ -1,0 +1,15 @@
+- name: Download Calico manifest
+  become: yes
+  become_user: ubuntu  # Or the user that has kubectl access
+  shell: |
+    curl -sSL https://raw.githubusercontent.com/projectcalico/calico/v3.30.2/manifests/calico.yaml -o /home/ubuntu/calico.yaml
+  args:
+    creates: /home/ubuntu/calico.yaml
+
+- name: Apply Calico network plugin
+  become: yes
+  become_user: ubuntu  # Or the user that has kubectl access
+  shell: |
+    kubectl apply -f /home/ubuntu/calico.yaml
+  environment:
+    KUBECONFIG: /home/ubuntu/.kube/config

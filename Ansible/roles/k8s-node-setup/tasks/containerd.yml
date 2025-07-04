@@ -1,0 +1,31 @@
+---
+- name: Ensure containerd configuration directory exists
+  file:
+    path: /etc/containerd
+    state: directory
+
+- name: Generate containerd default config if not exists
+  become: yes
+  shell: |
+    
+      mkdir -p /etc/containerd
+      containerd config default > /etc/containerd/config.toml
+    
+
+- name: Set SystemdCgroup = true in containerd config
+  shell: |
+    sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+    systemctl daemon-reload
+    systemctl restart containerd
+  become: yes
+  notify: Restart containerd
+- name: Ensure containerd is running
+  service:
+    name: containerd
+    state: started
+    enabled: yes
+# # Generate a default config file if missing  
+# sudo containerd config default | sudo tee /etc/containerd/config.toml  
+
+# # Correct the cgroup setting  
+# sudo sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml  
