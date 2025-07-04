@@ -8,10 +8,21 @@
   set_fact:
     target_master: "{{ (kube_master_host is defined) | ternary(kube_master_host, groups[kube_master_group][0]) }}"
 
+- name: Generate kubeadm join command on master
+  command: kubeadm token create --print-join-command
+  register: join_command_output
+  delegate_to: "{{ target_master }}"
+  run_once: true
+
+- name: Set join command for all hosts
+  set_fact:
+    kubeadm_join_command: "{{ join_command_output.stdout }}"
+  run_once: true
+
 - name: Join worker node to cluster
-  command: "sudo {{ hostvars[target_master]['kubeadm_join_command'] }}"
+  command: "sudo {{ kubeadm_join_command }}"
   when: > 
     not kubelet_conf.stat.exists or 
     kubelet_conf.stat.size == 0
   args:
-    creates: /etc/kubernetes/kubelet.conf  # Ensures idempotence
+    creates: /etc/kubernetes/kubelet.conf

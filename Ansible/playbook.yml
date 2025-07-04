@@ -2,6 +2,11 @@
   hosts: master
   gather_facts: true
   become: true
+  vars:
+    node_hostname: "master"
+    kubeadm_init_apiserver_advertise_address: "{{ ansible_default_ipv4.address }}"
+    kubeadm_init_control_plane_endpoint: "{{ hostvars[inventory_hostname]['public_ip'] }}"
+    kube_join_role: master
 
   roles:
     - k8s-node-setup
@@ -12,7 +17,9 @@
   hosts: workers
   gather_facts: true
   become: true
-
+  vars:
+    node_hostname: "worker{{ ansible_play_hosts.index(inventory_hostname) + 1 }}"
+    kube_join_role: worker
   roles:
     - k8s-node-setup
     - join
