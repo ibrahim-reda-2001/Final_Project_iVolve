@@ -32,7 +32,7 @@
   roles:
     - jenkins
     - docker
-
+    
 - name: this is for jenkins slave
   hosts: jenkins-slave
   gather_facts: true
