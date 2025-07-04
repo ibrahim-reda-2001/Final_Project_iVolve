@@ -96,7 +96,7 @@ pipeline {
         stage('update maifistfile') {
             steps {
                 dir('argo_manfist'){
-                   k8sdeploy("${K8S_CREDS}", "${K8S_CLUSTER}", "${DOCKER_IMAGE}", "${K8S_NAMESPACE}")
+                   sh "sed -i 's|image: .*|image: ibrahimelmsery1/${DOCKER_IMAGE}:${env.BUILD_NUMBER}|' deployment.yml" 
                 }
             }
         }
