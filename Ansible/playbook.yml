@@ -12,6 +12,7 @@
     - k8s-node-setup
     - kubeadm
     - cni
+    - join
 
 - name: this is for workers kubernetes
   hosts: workers
